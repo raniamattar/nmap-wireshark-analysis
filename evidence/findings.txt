@@ -1,0 +1,61 @@
+NMAP SCAN DETECTION & PACKET ANALYSIS — FINDINGS SUMMARY
+==========================================================
+
+1) STANDARD SCAN (nmap_standard_scan)
+   Total packets: 2004 (2000 TCP, 4 ARP)
+   A->B: 2000   B->A: 0
+   SYN probes (syn==1, ack==0): 2000
+   RST responses: 0
+   SYN-ACK responses: 0
+   ACK packets: 0
+   Conclusion: Outbound SYN probing only. No response evidence -> port
+   states (open/closed/filtered) CANNOT be determined from this file.
+
+2) ACK SCAN (nmap_ACK_scan_on_port_80)
+   Total packets: 6 (2 TCP, 4 ARP)
+   Source: 192.168.100.103   Target: 192.168.100.102:80
+   ACK probes: 2 (source ports 47104, 47105)
+   Response from target: none captured
+   Conclusion: ACK-based probing toward port 80. No reaction from
+   target present in this capture.
+
+3) OS SCAN (nmap_OS_scan)
+   Total packets: 2056 (2024 TCP, 16 ICMP, 6 ARP)
+   SYN packets (syn==1): 2008
+   Non-SYN TCP packets: 16
+      - ACK-only (ack==1, syn==0): 8
+      - FIN (fin==1): 8
+   Targeted ports for non-SYN probes: 39577, 41712
+   Conclusion: Mix of ordinary SYN probes + deliberately varied flag
+   combinations, consistent with OS fingerprinting behavior. No OS
+   was determined from this capture (no response data).
+
+4) SUCCESSFUL OS SCAN (nmap_OS_scan_successful)
+   Total packets: 2052 (2048 TCP, 4 ARP)
+   SYN probes (syn==1, ack==0): 2007
+   SYN-ACK responses (syn==1, ack==1): 10
+   Full response set (tcp && ip.src==192.168.100.101): 19 packets
+      -> mix of SYN-ACK, RST-ACK, and RST
+   Example response: 192.168.100.101:445 -> 192.168.100.103:44276 [SYN,ACK]
+   Conclusion: This capture DOES include target responses, which is
+   what OS fingerprinting logic actually relies on. No specific OS
+   was named (out of scope for this project).
+
+5) ZOMBIE / IDLE SCAN (nmap_zombie_scan)
+   Total packets: 42 (36 TCP, 6 ARP)
+   Conversation 1: 192.168.100.102 <-> 192.168.100.101
+      total 10 (A->B 4, B->A 6)
+   Conversation 2: 192.168.100.103 <-> 192.168.100.101
+      total 26 (A->B 13, B->A 13)
+   Hosts involved: .101, .102, .103 (three-host structure)
+   IP ID values checked for .102: 30634, 55698, 16518, 46115
+      -> NOT sequential
+   Conclusion: Three-host pattern is consistent with an idle scan
+   structure, but the "zombie" host was NOT conclusively identified
+   because the IP ID evidence was not sequential/predictable.
+
+==========================================================
+Overall takeaway: different scan techniques leave distinct packet-level
+signatures, but several of these sample captures only recorded one
+direction of traffic, limiting what can be concluded about actual
+target behavior in those cases.
